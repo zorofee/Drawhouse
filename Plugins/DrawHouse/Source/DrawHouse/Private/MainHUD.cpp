@@ -3,6 +3,7 @@
 
 #include "MainHUD.h"
 #include "Engine/LocalPlayer.h"
+#include "MouseEventManager.h"
 
 AMainHUD::AMainHUD(const FObjectInitializer& ObjectInitializer) :
 	AHUD(ObjectInitializer)
@@ -15,16 +16,8 @@ void AMainHUD::BeginPlay()
 {
 	Super::BeginPlay();
 
-	AddPoint(FVector2D(50, 50));
-	AddPoint(FVector2D(200, 50));
-	AddPoint(FVector2D(200, 300));
-	AddPoint(FVector2D(50, 500));
-
-	AddLine(0, 1);
-	AddLine(1, 2);
-	AddLine(2, 3);
-
-	DeletePoint(1);
+	MouseEventManager::Get()->mouseButtonDownEvent.AddUObject(this, &AMainHUD::OnMouseDown);
+	MouseEventManager::Get()->mouseButtonReleaseEvent.AddUObject(this, &AMainHUD::OnMouseUp);
 }
 
 void AMainHUD::Tick(float DeltaSeconds)
@@ -41,25 +34,36 @@ void AMainHUD::DrawHUD()
 	{
 		for (size_t j = 0; j < MAX_POINT_NUM; j++)
 		{
-			if (m_LineData[i][j] == true)
+			if (m_LineData[i][j] == true || m_LineData[j][i] == true)
 			{
-				//两点之间有连线
+				//两点之间有连线的话画一条线
 				DrawLine(m_PointPos[i].X, m_PointPos[i].Y, m_PointPos[j].X, m_PointPos[j].Y, FLinearColor::Black, 5);
 			}
 		}
+
+		//有新的点时画个点
+		if (m_PointPos[i] != FVector2D::ZeroVector)
+		{
+			DrawRect(FLinearColor::Red, m_PointPos[i].X-10, m_PointPos[i].Y-10, 20, 20);
+		}
 	}
-
 }
 
-
-void AMainHUD::OnMouseDown()
+int32 num = -1;
+void AMainHUD::OnMouseDown(const FVector2D& mousePos)
 {
-
+	UE_LOG(LogTemp, Warning, TEXT("OnMousePressed %s"),*mousePos.ToString());
+	AddPoint(mousePos);
+	num++;
+	if (num > 0)
+	{
+		AddLine(num-1, num);
+	}
 }
 
-void AMainHUD::OnMouseUp()
+void AMainHUD::OnMouseUp(const FVector2D& mousePos)
 {
-
+	UE_LOG(LogTemp, Warning, TEXT("OnMouseReleased %s"),*mousePos.ToString());
 }
 
 
@@ -71,6 +75,7 @@ void AMainHUD::AddPoint(FVector2D pos)
 	{
 		index = m_DeletePoints.Pop();
 	}
+
 	else
 	{
 		for (size_t i = 0; i < MAX_POINT_NUM; i++)
@@ -85,6 +90,7 @@ void AMainHUD::AddPoint(FVector2D pos)
 	}
 
 	m_PointPos[index] = pos;
+
 }
 
 void AMainHUD::AddLine(int32 startIndex, int32 endIndex)
@@ -93,7 +99,6 @@ void AMainHUD::AddLine(int32 startIndex, int32 endIndex)
 	{
 		m_LineData[startIndex][endIndex] = true;
 		m_LineData[endIndex][startIndex] = true;
-
 	}
 }
 

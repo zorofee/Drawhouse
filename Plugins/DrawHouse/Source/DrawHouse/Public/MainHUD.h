@@ -24,9 +24,9 @@ public:
 	
 	void DrawHUD() override;
 	
-	void OnMouseDown();
+	void OnMouseDown(const FVector2D& mousePos);
 
-	void OnMouseUp();
+	void OnMouseUp(const FVector2D& mousePos);
 
 	void AddPoint(FVector2D pos);
 
